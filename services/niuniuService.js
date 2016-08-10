@@ -24,7 +24,18 @@ var login = function login(obj, callback) {
     });
     console.log("login");
 }
+/**
+ * 手机号注册
+ */
+var register = function register(obj, callback) {
+    var str = "call sp_smscode ('18623238852','check','9873');";
+    console.log("SQL组合：" + str);
+    sql(str, function (qerr, vals, fields) {
+        callback(vals);
 
+    });
+    console.log("register");
+}
 
 /**
  * 主页
@@ -32,6 +43,22 @@ var login = function login(obj, callback) {
 var home = function home() {
     console.log("home");
 
+}
+
+
+/**
+ * 加入房间
+ */
+var join = function join() {
+    console.log("join");
+}
+
+
+/**
+ * 离开房间
+ */
+var leave = function leave() {
+    console.log("leave");
 }
 
 /**
@@ -71,9 +98,12 @@ var expose = function expose() {
 
 
 exports.login = login;
+exports.register = register;
 exports.home = home;
 exports.banker = banker;
 exports.betting = betting;
 exports.player = player;
 exports.transfer = transfer;
+exports.join = join;
+exports.leave = leave;
 exports.expose = expose;
