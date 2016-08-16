@@ -48,6 +48,7 @@ router.prepareSocketIO = function (server) {
                 });
                 timing = 10;
             }
+            console.log("倒计时：" + timing);
             timing--;
         }, 1000);
         //通用接收
@@ -180,8 +181,8 @@ router.prepareSocketIO = function (server) {
             //通过数据库查询
             var userInfo = {
                 id: 1,
-                name: "吴红",
-                head: "http://v1.qzone.cc/avatar/201406/18/20/03/53a1801f756ac162.JPG",
+                playerName: "吴红",
+                playerPhoto: "http://v1.qzone.cc/avatar/201406/18/20/03/53a1801f756ac162.JPG",
                 integral: 3000,
             };
             socket.name = userInfo.id;
@@ -277,6 +278,112 @@ router.prepareSocketIO = function (server) {
             //向所有客户端广播用户
             io.in(roomInfo.id).emit('broadcast', broadcast);
             console.log(userInfo.name + "加入房间");
+        });
+
+        //抢庄
+        socket.on('grab', function (data) {
+            //通过数据库查询当前局的信息
+            var gameInfo = {
+                id: 1,//局号
+                integral: 3000,//当前积分
+                roomInfo: {
+                    id: 1,//房间ID
+                    quantity: 3,//当前房间人数
+                    max: 26, //最大房间人数
+                    min: 3, //最小房间人数
+                    state: 0//当前房间状态
+                },//房间信息
+                grabInfo: {
+                    id: 1,
+                    playerName: "吴红",
+                    playerPhoto: "http://v1.qzone.cc/avatar/201406/18/20/03/53a1801f756ac162.JPG",
+                    integral: 3000,
+                }//抢庄者信息
+            };
+
+            //通知客户端抢庄成功
+            socket.emit("filling", gameInfo);
+
+            var broadcast = {
+                type: "grab",
+                data: gameInfo
+            };
+            //向所有客户端广播有用户抢庄
+            io.in(gameInfo.roomId).emit('broadcast', broadcast);
+            console.log(userInfo.name + "加入房间");
+        });
+
+
+        //下注
+        socket.on('filling', function (data) {
+            //通过数据库查询当前局的信息
+            var gameInfo = {
+                id: 1,//局号
+                integral: 3000,//当前积分
+                roomInfo: {
+                    id: 1,//房间ID
+                    quantity: 3,//当前房间人数
+                    max: 26, //最大房间人数
+                    min: 3, //最小房间人数
+                    state: 0//当前房间状态
+                },//房间信息
+                bankerInfo: {
+                    id: 1,
+                    playerName: "吴红",
+                    playerPhoto: "http://v1.qzone.cc/avatar/201406/18/20/03/53a1801f756ac162.JPG",
+                    integral: 3000,
+                }//庄家信息
+            };
+
+            //通知客户端抢庄成功
+            socket.emit("filling", gameInfo);
+
+            var broadcast = {
+                type: "filling",
+                data: gameInfo
+            };
+            //向所有客户端广播有用户抢庄
+            io.in(gameInfo.roomId).emit('broadcast', broadcast);
+        });
+
+        //获取游戏信息
+        socket.on('game', function (data) {
+            //通过数据库查询当前局的信息
+            var gameInfo = {
+                id: 1,//局号
+                integral: 3000,//当前积分
+                roomInfo: {
+                    id: 1,//房间ID
+                    quantity: 3,//当前房间人数
+                    max: 26, //最大房间人数
+                    min: 3, //最小房间人数
+                    state: 0//当前房间状态
+                },//房间信息
+                bankerInfo: {
+                    id: 1,
+                    playerName: "吴红",
+                    playerPhoto: "http://v1.qzone.cc/avatar/201406/18/20/03/53a1801f756ac162.JPG",
+                    integral: 3000,
+                },//庄家信息
+                players: [{
+                    id: 1,
+                    playerName: "吴红",
+                    playerPhoto: "http://v1.qzone.cc/avatar/201406/18/20/03/53a1801f756ac162.JPG",
+                    integral: 3000,
+                    state: 0,//0进行中，1旁观
+                }],//玩家信息
+            };
+
+            //通知客户端抢庄成功
+            socket.emit("game", gameInfo);
+
+            var broadcast = {
+                type: "game",
+                data: gameInfo
+            };
+            //向所有客户端广播有用户抢庄
+            // io.in(gameInfo.roomId).emit('game', broadcast);
+
         });
         //离开房间
         socket.on('leave', function (data) {
