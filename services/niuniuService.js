@@ -17,25 +17,53 @@ var opts = {
  * 登录（返回用户所有信息）
  */
 var login = function login(obj, callback) {
-    var str = "SELECT * from game_system_user where id=" + obj.value;
-    console.log("SQL组合：" + str);
-    sql(str, function (qerr, vals, fields) {
-        callback(vals);
-    });
-    console.log("login");
-}
-/**
- * 手机号注册
- */
-var register = function register(obj, callback) {
-    var str = "call sp_smscode ('18623238852','check','9873');";
-    console.log("SQL组合：" + str);
-    sql(str, function (qerr, vals, fields) {
-        callback(vals);
 
-    });
-    console.log("register");
+    try {
+        var str = "call sp_playerlogin ('" + obj.type + "','" + obj.dlm + "','" + obj.dlip + "'," + obj.zhlx + "," + obj.sjid + ",'" + obj.pic + "');";
+        console.log("SQL组合：" + str);
+        sql(str, function (qerr, vals, fields) {
+            callback(vals);
+        });
+        console.log("login");
+    } catch (err) {
+        console.log("异常：" + err.message);
+    }
 }
+
+
+/**
+ * 创建房间
+ */
+var newroom = function newroom(obj, callback) {
+
+    try {
+        var str = "call sp_createdesk ('" + obj.id + "','" + obj.pwd + "');";
+        console.log("SQL组合：" + str);
+        sql(str, function (qerr, vals, fields) {
+            callback(vals);
+        });
+        console.log("newroom");
+    } catch (err) {
+        console.log("异常：" + err.message);
+    }
+}
+
+/**
+ * 加入房间
+ */
+var join = function join() {
+    try {
+        var str = "call sp_createdesk ('" + obj.uid + "','" + obj.desktype + "','" + obj.desknum + "','" + obj.deskpwd + "');";
+        console.log("SQL组合：" + str);
+        sql(str, function (qerr, vals, fields) {
+            callback(vals);
+        });
+        console.log("join");
+    } catch (err) {
+        console.log("异常：" + err.message);
+    }
+}
+
 
 /**
  * 主页
@@ -43,14 +71,6 @@ var register = function register(obj, callback) {
 var home = function home() {
     console.log("home");
 
-}
-
-
-/**
- * 加入房间
- */
-var join = function join() {
-    console.log("join");
 }
 
 
@@ -98,7 +118,8 @@ var expose = function expose() {
 
 
 exports.login = login;
-exports.register = register;
+exports.newroom = newroom;
+
 exports.home = home;
 exports.banker = banker;
 exports.betting = betting;

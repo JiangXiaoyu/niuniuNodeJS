@@ -178,122 +178,75 @@ router.prepareSocketIO = function (server) {
         //客户登录;
         socket.on('login', function (data) {
 
-            //通过数据库查询
-            var userinfo = {
-                id: 1,
-                playerName: "吴红",
-                playerPhoto: "http://v1.qzone.cc/avatar/201406/18/20/03/53a1801f756ac162.JPG",
-                integral: 3000,
-            };
-            socket.name = userinfo.id;
+                try {
+                    var obj = JSON.parse(data);
 
-            //检查在线列表，如果不在里面就加入
-            if (!onlineUsers.hasOwnProperty(userinfo.id)) {
-                onlineUsers[userinfo.id] = userinfo.name;
-                //在线人数+1
-                onlineCount++;
-            }
+                    //根据用户传入信息进行注册
+                    var userinfo = sql.login(obj, function (vals) {
+                        var results = vals[0];
+                        var item = results[0];
+                        console.log("返回记录：" + JSON.stringify(item));
+                        if (item) {
+                            socket.emit('login', {state: 0, msg: "登录成功", data: item});
+                            // io.sockets.emit('online', {number: item.number, nickNmae: item.nickNmae});
+                            var broadcast = {
+                                type: "online",
+                                data: {
+                                    number: item.number,
+                                    nickNmae: item.nickNmae,
+                                    score: item.score
+                                }
+                            };
+                            //向所有客户端广播用户
+                            socket.broadcast.emit('broadcast', broadcast);
+                            console.log(item.nickNmae + "上线");
+                        } else {
+                            socket.emit('login', {state: 1, msg: "登录失败"});
+                        }
 
-            //组合返回客户端
-            var userobj = {
-                msg: "登录成功",
-                scene: "home",
-                data: userinfo
-            };
-            //获取用户登录信息
-            socket.emit("login", userobj);
-
-            var broadcast = {
-                type: "online",
-                data: {
-                    id: socket.name,
-                    name: onlineUsers[socket.name]
+                        socket.name = item.number;
+                    })
+                    //
+                    ////检查在线列表，如果不在里面就加入
+                    //if (!onlineUsers.hasOwnProperty(userinfo.id)) {
+                    //    onlineUsers[userinfo.id] = userinfo.name;
+                    //    //在线人数+1
+                    //    onlineCount++;
+                    //}
+                } catch (err) {
+                    console.log("Login异常：" + err);
                 }
-            };
-            //向所有客户端广播用户
-            io.emit('broadcast', broadcast);
-            console.log(userinfo.name + "上线");
-
-        });
-
-
-        //客户注册;
-        socket.on('register', function (data) {
-            //根据用户传入信息进行注册
-            var userinfo = sql.register(obj.data, function (res) {
-                var item = res[0];
-                console.log("注册返回记录：" + JSON.stringify(item));
-                //if (item) {
-                //    socket.emit('login', {state: 0, msg: "登录成功", data: item});
-                //    io.sockets.emit('online', {id: item.id, name: item.name});
-                //} else {
-                //    socket.emit('login', {state: 1, msg: "登录失败"});
-                //}
-
-            })
-            //组合返回客户端
-            var userobj = {
-                msg: "登录成功",
-                scene: "home",
-                data: userinfo
-            };
-            //通知客户端
-            socket.emit("register", userobj);
-
-        });
+            }
+        );
 
         //加入房间
         socket.on('join', function (data) {
-            //当前用户信息
-            var userinfo = {
-                id: 1,
-                name: "吴红庄家",
-                head: "http://v1.qzone.cc/avatar/201406/18/20/03/53a1801f756ac162.JPG",
-                integral: 3000,
-                type: 0
-            }
-            //从数据库查找当前可用房间
-            var roominfo = {
-                id: 1,//房间ID
-                quantity: 3,//当前房间人数
-                max: 26, //最大房间人数
-                min: 3, //最小房间人数
-                state: 0//当前房间状态
-            };
-            //玩家信息
-            var players = [{
-                id: 1,
-                name: "吴红庄家",
-                head: "http://v1.qzone.cc/avatar/201406/18/20/03/53a1801f756ac162.JPG",
-                integral: 3000,
-                type: 0
-            }, {
-                id: 1,
-                name: "吴红1",
-                head: "http://v1.qzone.cc/avatar/201406/18/20/03/53a1801f756ac162.JPG",
-                integral: 3000,
-                type: 1
-            }, {
-                id: 1,
-                name: "吴红2",
-                head: "http://v1.qzone.cc/avatar/201406/18/20/03/53a1801f756ac162.JPG",
-                integral: 3000,
-                type: 1
-            }, {
-                id: 1,
-                name: "吴红本人",
-                head: "http://v1.qzone.cc/avatar/201406/18/20/03/53a1801f756ac162.JPG",
-                integral: 3000,
-                type: -1
-            },];
+            var obj = JSON.parse(data);
+            sql.join(obj, function (vals) {
+                var results = vals[0];
+                var item = results[0];
+                console.log("返回记录：" + JSON.stringify(item));
+                if (item) {
+                    //加入房间
+                    socket.join(item.id);
+                    socket.emit('join', {state: 0, msg: "加入房间成功", data: item});
 
-            //组合返回客户端
-            var obj = {
-                msg: "加入房间成功",
-                scene: "home",
-                players: players,
-                roominfo: roominfo,
-            };
+                    var broadcast = {
+                        type: "join",
+                        data: {
+                            number: item.number,
+                            nickNmae: item.nickNmae,
+                            score: item.score
+                        }
+                    };
+                    //向所有客户端广播用户
+                    socket.broadcast.emit('broadcast', broadcast);
+                    console.log(item.nickNmae + "上线");
+                } else {
+                    socket.emit('newroom', {state: 1, msg: "登录失败"});
+                }
+
+            })
 
             //通知客户端
             socket.emit("join", obj);
@@ -308,7 +261,49 @@ router.prepareSocketIO = function (server) {
             socket.broadcast.to(roominfo.id).emit('broadcast', broadcast);
             console.log(userinfo.name + "加入房间");
         });
+        //创建房间
+        socket.on('newroom', function (data) {
+            var obj = JSON.parse(data);
 
+            //根据用户传入信息进行注册
+            sql.newroom(obj, function (vals) {
+                var results = vals[0];
+                var item = results[0];
+                console.log("返回记录：" + JSON.stringify(item));
+                if (item) {
+                    //加入房间
+                    socket.join(item.id);
+                    socket.emit('join', {state: 0, msg: "加入房间成功", data: item});
+
+
+                    var broadcast = {
+                        type: "join",
+                        data: {
+                            number: item.number,
+                            nickNmae: item.nickNmae,
+                            score: item.score
+                        }
+                    };
+                    //向当前房间除我的客户端广播用户
+                    socket.broadcast.to(item.id).emit('broadcast', broadcast);
+                    console.log(item.nickNmae + "上线");
+                } else {
+                    socket.emit('newroom', {state: 1, msg: "登录失败"});
+                }
+
+            })
+
+            //通知客户端抢庄成功
+            socket.emit("filling", gameInfo);
+
+            var broadcast = {
+                type: "grab",
+                data: gameInfo
+            };
+            //向所有客户端广播有用户抢庄
+            socket.broadcast.to(gameInfo.roomId).emit('broadcast', broadcast);
+            console.log(userinfo.name + "加入房间");
+        });
         //抢庄
         socket.on('grab', function (data) {
             //通过数据库查询当前局的信息
